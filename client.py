@@ -1,8 +1,7 @@
 import struct
 import socket
-from scapy.all import IP, TCP, Raw
 from TCP_seg import TCP_seg, compute_checksum, verify_checksum
-from TCPServer import TCP
+from TCP import TCP
 import random
 import time
 
