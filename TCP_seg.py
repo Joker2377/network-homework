@@ -22,7 +22,34 @@ def compute_checksum(data):
         # one's complement
         return ~chksum & 0xffff
 
-def verify_checksum(tcp_seg, src_ip, dst_ip):
+def recompute_checksum(tcp_seg, src_ip, dst_ip):
+    src_ip = src_ip
+    dst_ip = dst_ip
+    reserved = 0
+    protocal = socket.IPPROTO_TCP
+    checksum = tcp_seg.checksum
+    tcp_seg.checksum = 0
+
+    tcp_header = struct.pack('!HHLLBBHHH',
+                                tcp_seg.src_port, tcp_seg.dst_port, #  HH
+                                tcp_seg.seq_num, # L
+                                tcp_seg.ack_num, # L
+                                (tcp_seg.data_offset << 4) | tcp_seg.reserved, # 16 BB
+                                tcp_seg.flags, tcp_seg.window_size,            # 16 H
+                                tcp_seg.checksum, tcp_seg.urgent_pointer) # HH
+    
+    total_length = len(tcp_header) + len(tcp_seg.data)
+
+    pseudo_header = struct.pack('!4s4sBBH',
+                                src_ip, dst_ip, 
+                                reserved, protocal, 
+                                total_length)
+
+    pseudo_header += tcp_header + tcp_seg.data
+    tcp_seg.checksum = checksum
+    return compute_checksum(pseudo_header)
+
+def verify_checksum(tcp_seg, src_ip, dst_ip, verbose=False):
     src_ip = src_ip
     dst_ip = dst_ip
     reserved = 0
@@ -92,6 +119,7 @@ class TCP_seg:
     def pack(self, src_ip, dst_ip):
         self.data_offset = 5+(len(self.options)>>2)
         # H: (2), L: (4), B: (1)
+        self.checksum=0
         tcp_header = struct.pack('!HHLLBBHHH',
                                  self.src_port, self.dst_port, #  HH
                                  self.seq_num, # L
@@ -120,7 +148,11 @@ class TCP_seg:
                                  (self.data_offset << 4) | self.reserved, # 16 BB
                                  self.flags, self.window_size,            # 16 H
                                  self.checksum, self.urgent_pointer)
-        
+        if self.checksum != recompute_checksum(self, src_ip, dst_ip):
+            print("Checksum Error")
+            print(f"    Expected: {recompute_checksum(self, src_ip, dst_ip)}")
+            print(f"    Received: {self.checksum}")
+
         return tcp_header + self.options + self.data
 
 
