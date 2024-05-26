@@ -22,10 +22,62 @@ class TCPSocket:
         self.recv_buf = b''
         self.state = "CLOSED"
         self.connections = []
+
+        self.glob_recv_buf = []
+        self.glob_recv_buf_lock = threading.Lock()
+        self.listening = True
+        self.sending = True
     
+        self.start_threads()
+
     def update_state(self, new_state):
         self.state = new_state
         print(f"Server State: {self.state}")
+
+    def start_threads(self):
+        self.t_recv = threading.Thread(target=self._recv, args=(1024,))
+        self.t_send = threading.Thread(target=self._send)
+        self.t_remove = threading.Thread(target=self._remove_closed_connections)
+        self.t_recv.start()
+        self.t_send.start()
+        self.t_remove.start()
+
+    def _remove_closed_connections(self):
+        while self.listening:
+            if not self.connections:
+                time.sleep(0.01)
+                continue
+            for conn in self.connections:
+                if conn.state == "CLOSED":
+                    self.connections.remove(conn)
+
+    def _send(self):
+        while self.sending:
+            for conn in self.connections:
+                if conn.send_buf:
+                    with conn.send_buf_lock:
+                        data, addr = conn.send_buf.pop(0)
+                        self.sock.sendto(data, addr)
+
+    def _recv(self, size):
+        while self.listening:
+            data, addr = self.sock.recvfrom(size)
+            conn = None
+            for conn in self.connections:
+                if conn.dst_ip == addr[0] and conn.dst_port == addr[1]:
+                    conn.append_unhandled((data, addr))
+                    break
+            if not conn:
+                with self.glob_recv_buf_lock:
+                    self.glob_recv_buf.append((data, addr))
+
+    def _get_glob_recv_buf(self):
+        while not self.glob_recv_buf:
+            time.sleep(0.0001) # make sure it wont cause starvation
+        with self.glob_recv_buf_lock:
+            if self.glob_recv_buf:
+                return self.glob_recv_buf.pop(0)
+            return None
 
     def bind(self, src_ip, src_port):
         self.src_ip = src_ip
@@ -35,46 +87,45 @@ class TCPSocket:
         print(f"Server is listening on {src_ip}:{src_port}")
     
     def accept(self):
-        while True:
-            data, addr = self.sock.recvfrom(1024)
-            tcp_seg = TCP_seg().unpack(data)
-            flags = {
-                'FIN': (tcp_seg.flags & 1) == 1,
-                'SYN': (tcp_seg.flags & 2) == 2,
-                'RST': (tcp_seg.flags & 4) == 4,
-                'PSH': (tcp_seg.flags & 8) == 8,
-                'ACK': (tcp_seg.flags & 16) == 16,
-                'URG': (tcp_seg.flags & 32) == 32,
-                'ECE': (tcp_seg.flags & 64) == 64,
-                'CWR': (tcp_seg.flags & 128) == 128
-            }
-            if not verify_checksum(tcp_seg, socket.inet_aton(addr[0]), socket.inet_aton(self.src_ip)):
-                print("Checksum failed")
-                return None
-            
-            for x in self.connections:
-                if x.src_ip == addr[0] and x.src_port == addr[1]:
-                    return x
-            print(f"    receive: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num} <<< {addr[0]}:{addr[1]}")
-            print(f"(Connection from {addr[0]}:{addr[1]})")
-            if flags['SYN']:
-                conn_num = addr[1]
-                conn = Connection(self.sock, self.src_ip, addr[0], self.src_port, addr[1], conn_num)
-                self.connections.append(conn)
-                conn.update_state("LISTEN")
-                while conn.state != "ESTABLISHED":
-                    conn.handshake(client=False, syn_seg=tcp_seg)
-                return conn
+        data, addr = self._get_glob_recv_buf()
+        tcp_seg = TCP_seg().unpack(data)
+        flags = {
+            'FIN': (tcp_seg.flags & 1) == 1,
+            'SYN': (tcp_seg.flags & 2) == 2,
+            'RST': (tcp_seg.flags & 4) == 4,
+            'PSH': (tcp_seg.flags & 8) == 8,
+            'ACK': (tcp_seg.flags & 16) == 16,
+            'URG': (tcp_seg.flags & 32) == 32,
+            'ECE': (tcp_seg.flags & 64) == 64,
+            'CWR': (tcp_seg.flags & 128) == 128
+        }
+        if not verify_checksum(tcp_seg, socket.inet_aton(addr[0]), socket.inet_aton(self.src_ip)):
+            print("Checksum failed")
+            return None
+        
+        for x in self.connections:
+            if x.src_ip == addr[0] and x.src_port == addr[1]:
+                return x
+        print(f"    receive: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num} <<< {addr[0]}:{addr[1]}")
+        print(f"(Connection from {addr[0]}:{addr[1]})")
+        if flags['SYN']:
+            conn_num = addr[1]
+            conn = Connection(self.src_ip, addr[0], self.src_port, addr[1], conn_num)
+            self.connections.append(conn)
+            conn.update_state("LISTEN")
+            while conn.state != "ESTABLISHED":
+                conn.handshake(client=False, syn_seg=tcp_seg)
+            return conn
         
     def connect(self, dst_ip, dst_port):
-        conn = Connection(self.sock, self.src_ip, dst_ip, self.src_port, dst_port)
+        conn = Connection(self.src_ip, dst_ip, self.src_port, dst_port)
+        self.connections.append(conn)
         while conn.state != "ESTABLISHED":
             conn.handshake()
         return conn
 
 class Connection:
-    def __init__(self,sock ,src_ip, dst_ip, src_port, dst_port, conn_num=0):
-        self.sock = sock if sock else socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    def __init__(self, src_ip, dst_ip, src_port, dst_port, conn_num=0):
         self.src_ip = src_ip
         self.dst_ip = dst_ip
         self.src_port = src_port
@@ -89,12 +140,16 @@ class Connection:
 
         self.inflight_buf = []
         self.recv_buf = []
+        self.unhandled_buf = []
+        self.send_buf = []
         self.cwnd = 1
         self.threshold = 64
         self.mss = 1024
 
         self.listening = True
         self.recv_buf_lock = threading.Lock()
+        self.unhandled_buf_lock = threading.Lock()
+        self.send_buf_lock = threading.Lock()
     
 
         self.start_recv_thread()
@@ -136,7 +191,7 @@ class Connection:
         print(f"    options: {tcp_seg.options}")
         print(f"    data: {tcp_seg.data[:10]}...truncated")
         print("*"*10)
-
+    
     def update_state(self, new_state):
         self.state = new_state
         print(f"({self.state})")
@@ -166,7 +221,8 @@ class Connection:
         self.inflight_buf.append((self.seq_num, tcp_seg))
         self.seq_num = self._get_next_seq(tcp_seg)
         tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
-        self.sock.sendto(tcp_seg, (self.dst_ip, self.dst_port))
+        with self.send_buf_lock:
+            self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
     
     def start_recv_thread(self):
         self.t = threading.Thread(target=self._recv, args=(1024,))
@@ -175,16 +231,31 @@ class Connection:
     def terminate(self):
         # terminate thread
         self.listening = False # useless since it's not global 
-        self.sock.close()
         print(f"Terminating connection with {self.dst_ip}:{self.dst_port}")
         if self.t and self.t.is_alive():
             self.t.join()
-        
+        print(f"Connection with {self.dst_ip}:{self.dst_port} terminated")
+    
+    def append_unhandled(self, data):
+        with self.unhandled_buf_lock:
+            self.unhandled_trigger = True
+            self.unhandled_buf.append(data)
 
+    def _recvfrom(self):
+        while not self.unhandled_buf:
+            time.sleep(0.0001)
+            if not self.listening:
+                return None, None
+        with self.unhandled_buf_lock:
+            if self.unhandled_buf:
+                if len(self.unhandled_buf) == 1:
+                    self.unhandled_trigger = False
+                return self.unhandled_buf.pop(0)
+            return None
 
     def _recv(self, size):
         while self.listening:
-            data, addr = self.sock.recvfrom(size)
+            data, addr = self._recvfrom()
             if not data:
                 continue
             tcp_seg = TCP_seg().unpack(data)
@@ -197,14 +268,10 @@ class Connection:
                 print(f"    Ack_num: {tcp_seg.ack_num} == {self.seq_num}")
                 print()
                 self.print_seg(tcp_seg)
-
-                
-                self._send(flags=['ACK'])
                 continue
             
             if tcp_seg.seq_num > self.ack_num and self.ack_num!=0:
                 print(f"    Expected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}")
-                self._send(flags=['ACK'])
                 continue
 
             self.ack_num = max(self.ack_num, self._get_next_seq(tcp_seg)) # their seq
@@ -233,7 +300,6 @@ class Connection:
             if tcp_seg.data:
                 self._send(flags=['ACK'])
 
-            
             with self.recv_buf_lock:
                 self.recv_buf.append(tcp_seg)
             #print(f"    buf: {len(self.recv_buf)}")
@@ -314,7 +380,7 @@ class Connection:
         
         
     def send(self, data):
-        time.sleep(0.1)
+        time.sleep(0.01)
         max_size = self.mss - 20
         size = len(data)
         while len(data) > 0:
@@ -322,7 +388,7 @@ class Connection:
                 self._send(flags=['ACK'], data=data[:max_size])
                 data = data[max_size:]
             else:
-                time.sleep(0.01)
+                time.sleep(0.0001)
         print(f"(Sent data with size {size})")
 
         #self._send(flags=['ACK'], data=data)
