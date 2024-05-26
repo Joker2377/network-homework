@@ -9,10 +9,11 @@ import threading
 
 def worker():
     print("****NEW CLIENT CREATED****")
-    src_port = random.randint(1000, 5000)
+    src_port = random.randint(1000, 50000)
     client = TCPSocket(src_ip='127.0.0.2', dst_ip='127.0.0.1', src_port=src_port, dst_port=12345)
     client.bind(src_ip='127.0.0.2', src_port=src_port)
     conn = client.connect(dst_ip='127.0.0.1', dst_port=12345)
+    conn.handshake()
     while True:
         data = conn.recv(1024)
         if data == b'BEGIN':
@@ -32,7 +33,7 @@ def worker():
 
 if __name__ == "__main__":
 
-    n = 5
+    n = 10
     threads = []
     for i in range(n):
         time.sleep(0.1)

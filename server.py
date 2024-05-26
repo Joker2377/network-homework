@@ -9,6 +9,7 @@ import time
 threads = []
 
 def new_connection(conn):
+    conn.handshake(client=False)
     conn.send(b'Hello World')
     conn.send(b'BEGIN')
     with open('./files/8192.txt', 'rb') as f:

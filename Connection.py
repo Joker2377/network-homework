@@ -22,15 +22,13 @@ class TCPSocket:
 
         self.recv_buf = b''
         self.state = "CLOSED"
-        self.connections = []
+        self.connections = {}
+
 
         self.glob_recv_buf = []
         self.glob_recv_buf_lock = threading.Lock()
         self.listening = True
         self.sending = True
-
-        self.udp_buf = []
-        self.udp_buf_lock = threading.Lock()
 
         self.conn_rec = 0
     
@@ -44,66 +42,59 @@ class TCPSocket:
         self.t_recv = threading.Thread(target=self._recv, args=(1024,))
         self.t_send = threading.Thread(target=self._send)
         self.t_remove = threading.Thread(target=self._remove_closed_connections)
-        self.t_udp_recv = threading.Thread(target=self._recvfrom)
+
         self.t_recv.start()
         self.t_send.start()
         self.t_remove.start()
-        self.t_udp_recv.start()
 
     def _remove_closed_connections(self):
         while self.listening:
             if not self.connections:
-                time.sleep(0.01)
+                time.sleep(1)
                 continue
-            for conn in self.connections:
-                if conn.state == "CLOSED":
-                    self.connections.remove(conn)
+            keystodelete = []
+            keys = list(self.connections.keys())
+            for k in keys:
+                if self.connections[k].state == "CLOSED":
+                    keystodelete.append(k)
+            [self.connections.pop(k) for k in keystodelete]
 
     def _send(self):
         while self.sending:
-            for conn in self.connections:
-                if conn.send_buf:
-                    with conn.send_buf_lock:
-                        data, addr = conn.send_buf.pop(0)
-                        self.sock.sendto(data, addr)
-
-    def _recvfrom(self):
-        while self.listening:
+            keys = list(self.connections.keys())
             try:
-                data, addr = self.sock.recvfrom(1024)
-                with self.udp_buf_lock:
-                    self.udp_buf.append((data, addr))
-            except socket.timeout:
-                continue
-            # handle close
-            except socket.error as e:
-                break
+                for k in keys:
+                    if self.connections[k].send_buf:
+                        with self.connections[k].send_buf_lock:
+                            data, addr = self.connections[k].send_buf.pop(0)
+                            self.sock.sendto(data, addr)
+            except KeyError:
+                pass
 
     def _recv(self, size):
         while self.listening:
-            if self.udp_buf:
-                with self.udp_buf_lock:
-                    if self.udp_buf:
-                        data, addr = self.udp_buf.pop(0)
-                    else:
-                        continue
-            else:
+            try:
+                data, addr = self.sock.recvfrom(size)
+            except socket.timeout:
                 continue
+            except socket.error:
+                break
             not_conn = True
-            for conn in self.connections:
-                if conn.dst_ip == addr[0] and conn.dst_port == addr[1]:
-                    conn.append_unhandled((data, addr))
-                    not_conn = False
-                    break
-                
+            try:
+                conn = self.connections[(addr[0], addr[1])]
+                not_conn = False
+                conn.append_unhandled((data, addr))
+            except KeyError:
+                pass
             if not_conn:
+                print(f"****RECEIVED CONNECTION FROM {addr[0]}:{addr[1]}****")
                 self.conn_rec += 1
                 with self.glob_recv_buf_lock:
                     self.glob_recv_buf.append((data, addr))
 
     def _get_glob_recv_buf(self):
         while not self.glob_recv_buf:
-            time.sleep(0.00001) # make sure it wont cause starvation
+            time.sleep(0.01) # make sure it wont cause starvation
         with self.glob_recv_buf_lock:
             if self.glob_recv_buf:
                 return self.glob_recv_buf.pop(0)
@@ -133,9 +124,6 @@ class TCPSocket:
             print("Checksum failed")
             return None
         
-        for x in self.connections:
-            if x.dst_ip == addr[0] and x.dst_port == addr[1]:
-                return x
         print(f"    receive: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num} <<< {addr[0]}:{addr[1]}")
         print(f"(Connection from {addr[0]}:{addr[1]})")
         if flags['SYN']:
@@ -143,23 +131,23 @@ class TCPSocket:
             conn = Connection(self.src_ip, addr[0], self.src_port, addr[1], conn_num)
             
             conn.update_state("LISTEN")
-            self.connections.append(conn)
-            conn.handshake(client=False, syn_seg=tcp_seg)
+            self.connections[(addr[0], addr[1])] = conn
+            conn.syn_seg = tcp_seg
             
             return conn
 
     def connect(self, dst_ip, dst_port):
         conn = Connection(self.src_ip, dst_ip, self.src_port, dst_port)
-        self.connections.append(conn)
-        while conn.state != "ESTABLISHED":
-            conn.handshake()
+        self.connections[(dst_ip, dst_port)] = conn
         return conn
 
     def close(self):
         self.sending = False
         self.listening = False
-        for conn in self.connections:
-            conn.close()
+        keys = list(self.connections.keys())
+        for k in keys:
+            self.connections[k].close()
+    
         self.sock.close()
         if self.t_recv.is_alive():
             self.t_recv.join()
@@ -181,7 +169,8 @@ class Connection:
 
         self.last_acked = 0
 
-        
+        self.syn_seg = None
+
         self.state = "CLOSED"
 
         self.inflight_buf = []
@@ -360,7 +349,7 @@ class Connection:
                 return tmp
             return None
 
-    def handshake(self, client=True, syn_seg=None):
+    def handshake(self, client=True):
         while self.state != "ESTABLISHED":
             if client:
                 if self.state == "CLOSED":
@@ -377,7 +366,7 @@ class Connection:
                 if self.state == "CLOSED":
                     return
                 elif self.state == "LISTEN":
-                    tcp_seg = syn_seg
+                    tcp_seg = self.syn_seg
                     self.ack_num = self._get_next_seq(tcp_seg)
 
                     if tcp_seg.flags == 2:
