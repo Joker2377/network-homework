@@ -7,10 +7,11 @@ import time
 import threading
 
 
+
 def worker():
     print("****NEW CLIENT CREATED****")
     src_port = random.randint(1000, 50000)
-    client = TCPSocket(src_ip='127.0.0.2', dst_ip='127.0.0.1', src_port=src_port, dst_port=12345)
+    client = TCPSocket(src_ip='127.0.0.2', src_port=src_port)
     client.bind(src_ip='127.0.0.2', src_port=src_port)
     conn = client.connect(dst_ip='127.0.0.1', dst_port=12345)
     conn.handshake()
@@ -33,7 +34,7 @@ def worker():
 
 if __name__ == "__main__":
 
-    n = 10
+    n = 1
     threads = []
     for i in range(n):
         time.sleep(0.1)

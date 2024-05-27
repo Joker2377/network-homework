@@ -117,6 +117,7 @@ class TCP_seg:
         return f"TCP Segment from port {self.src_port} to {self.dst_port}, Seq: {self.seq_num}, Ack: {self.ack_num}, Flags: {bin(self.flags)}"
 
     def pack(self, src_ip, dst_ip):
+        #print(f"packed with src_ip: {src_ip}, dst_ip: {dst_ip}")
         self.data_offset = 5+(len(self.options)>>2)
         # H: (2), L: (4), B: (1)
         self.checksum=0

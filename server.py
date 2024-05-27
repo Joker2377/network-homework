@@ -8,6 +8,9 @@ import time
 
 threads = []
 
+
+
+
 def new_connection(conn):
     conn.handshake(client=False)
     conn.send(b'Hello World')
@@ -34,7 +37,7 @@ def close_thread():
         time.sleep(1)
 
 if __name__ == "__main__":
-    server = TCPSocket(src_ip='127.0.0.1', dst_ip='127.0.0.1', src_port=12345, dst_port=54321)
+    server = TCPSocket(src_ip='127.0.0.1', src_port=12345)
     server.bind(src_ip='127.0.0.1', src_port=12345)
     
     # create a thread closing empty thread
