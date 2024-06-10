@@ -112,6 +112,8 @@ class TCP_seg:
 
         self.options = kwargs['options']
         self.data = kwargs['data']
+
+        self.timer = 0
     
     def __str__(self):
         return f"TCP Segment from port {self.src_port} to {self.dst_port}, Seq: {self.seq_num}, Ack: {self.ack_num}, Flags: {bin(self.flags)}"

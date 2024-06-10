@@ -7,12 +7,15 @@ import time
 import threading
 import argparse
 import re
+import hashlib
+import os
 
 parser = argparse.ArgumentParser(description="TCP Server")
 parser.add_argument('-i', '--ip', type=str, help="IP Address", default='127.0.0.1')
 parser.add_argument('-p', '--port', type=int, help="Port Number", default=12345)
 parser.add_argument('-d', '--dns', type=str, help="DNS Query", default='')
 parser.add_argument('-c', '--cal', type=str, help="Calculation", default='')
+parser.add_argument('-f', '--file', type=str, help="File Transfer", default='')
 
 args = parser.parse_args()
 
@@ -47,7 +50,7 @@ def task2(conn):
 
     print(f"(task2:  {re_mes.group(1)})")
 
-def task3(conn, filename):
+def file_transfer(conn, filename):
     # file transfer
     mes = b'FILE_TRANSFER<'+filename.encode()+b'>FILE_END'
     conn.send(mes)
@@ -62,6 +65,24 @@ def task3(conn, filename):
     mes = b'FILE_END'
     conn.send(mes)
 
+def task3(conn, filename):
+    mes = b'FILE_REQUEST<'+filename.encode()+b'>FILE_END'
+    conn.send(mes)
+    buf = b''
+    while conn.state != 'CLOSED':
+        data = conn.recv(1024)
+        if data == b'FILE_BEGIN':
+            continue
+        if data == b'FILE_END':
+            break
+        if b'FILE_TRANSFER' in data:
+            continue
+        buf += data
+    buf = buf.decode()
+    
+    print(f"Received file:")
+    print(f"{filename}: \n{buf}")
+
 
 def worker():
     print("****NEW CLIENT CREATED****")
@@ -74,13 +95,16 @@ def worker():
         task1(conn)
     if args.cal:
         task2(conn)
-    task3(conn, './files/8192.txt')
+    if args.file:
+        task3(conn, args.file)
+
     conn.close()
     client.close()
 
 
+
 if __name__ == "__main__":
-    n = 1
+    n = 2
     threads = []
     for i in range(n):
         time.sleep(0.1)
@@ -88,6 +112,7 @@ if __name__ == "__main__":
         t.start()
         threads.append(t)
     count = 0
+    print(f"Number of Threads: {len(threads)}")
     for t in threads:
         t.join()
         count += 1
