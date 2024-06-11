@@ -8,6 +8,7 @@ import builtins
 import threading
 import sys
 import time
+import random
 
 
 class TCPSocket:
@@ -86,16 +87,14 @@ class TCPSocket:
 
     def _send(self):
         while self.sending:
-            time.sleep(0.01)
             keys = list(self.connections.keys())
             try:
                 for k in keys:
                     if self.connections[k].send_buf:
                         with self.connections[k].send_buf_lock:
                             while self.connections[k].send_buf:
-                                data, addr = self.connections[k].send_buf.pop(0)
+                                data, addr = self.connections[k].send_buf.pop(0)    
                                 self.sock.sendto(data, addr)
-                                time.sleep(0.001)
             except KeyError:
                 pass
 
@@ -178,15 +177,16 @@ class TCPSocket:
             print(f">{self.conn_num:<2}| Received checksum: {tcp_seg.checksum}")
             self.print_seg(tcp_seg)
             return None
-        
+        if (addr[0], addr[1]) in self.connections.keys():
+            return None
+
         print(f">{self.conn_num:<2}|     receive: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num} <<< {addr[0]}:{addr[1]}")
         print(f">{self.conn_num:<2}| (Connection from {addr[0]}:{addr[1]})")
         if flags['SYN']:
             conn_num = addr[1]
             conn = Connection(self.src_ip, addr[0], self.src_port, addr[1])
-            
-            conn.update_state("LISTEN")
             self.connections[(addr[0], addr[1])] = conn
+            conn.update_state("LISTEN")
             self.conn_to_num[(addr[0], addr[1])] = self.conn_num
             conn.assign_conn_num(self.conn_num)
             self.conn_num += 1
@@ -247,17 +247,20 @@ class Connection:
         self.threshold = 64
         self.mss = 1024
 
+        self.rtt = 0.2
+
         self.listening = True
         self.recv_buf_lock = threading.Lock()
         self.unhandled_buf_lock = threading.Lock()
         self.send_buf_lock = threading.Lock()
         self.send_data_buf_lock = threading.Lock()
+        self.inflight_buf_lock = threading.Lock()
 
         self.conn_num = 0
         self.first_mes = False
     
 
-        self.start_recv_thread()
+        self.start_threads()
 
     def assign_conn_num(self, num):
         self.conn_num = num
@@ -303,12 +306,44 @@ class Connection:
         self.state = new_state
         print(f"({self.conn_num}) ({self.state})")
 
-    def _send(self, flags=[]):
-        with self.send_data_buf_lock:
-            if self.send_data_buf:
-                data = self.send_data_buf.pop(0)
-            else:
-                data = b''
+    def check_timer(self):
+        while self.listening:
+            time.sleep(0.00001)
+            if self.inflight_buf:
+                with self.inflight_buf_lock:
+                    copy = self.inflight_buf.copy()
+                curr_time = time.time()
+                late_list = [(curr_time - seg.timer, seg) for seq, seg in copy if (curr_time - seg.timer) > self.rtt]
+                for sample_rtt, seg in late_list:
+                    self.rtt = 0.5*self.rtt + 0.5*sample_rtt
+                    print(f"({self.conn_num})     Current RTT: {self.rtt}")
+                    print(f"({self.conn_num})     Timeout: ACK {seg.ack_num} SEQ {seg.seq_num}")
+                    self._resend(seg)
+
+    def _resend(self, tcp_seg):
+        if not self.listening:
+            return
+        print(f"({self.conn_num})     Resending: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num}: {len(tcp_seg.data)} bytes")
+        tcp_seg.timer = time.time()
+        
+        with self.inflight_buf_lock:
+            self.inflight_buf.insert(0, (tcp_seg.seq_num, tcp_seg))
+        tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
+        with self.send_buf_lock:
+            self.send_buf.insert(0, (tcp_seg, (self.dst_ip, self.dst_port)))
+
+    def _send(self, flags=[], nodata=False):
+        if not self.listening:
+            return
+
+        if not nodata:
+            with self.send_data_buf_lock:
+                if self.send_data_buf:
+                    data = self.send_data_buf.pop(0)
+                else:
+                    data = b''
+        else:
+            data = b''
 
         if self.seq_num == 0:
             self.seq_num = random.randint(0, 10000)
@@ -331,15 +366,27 @@ class Connection:
             options=b'',
             data=data
         )
-        self.inflight_buf.append((self.seq_num, tcp_seg))
+        
         self.seq_num = self._get_next_seq(tcp_seg)
+        tcp_seg.timer = time.time()
+        with self.inflight_buf_lock:
+            self.inflight_buf.append((tcp_seg.seq_num, tcp_seg))
+        
+        if random.random() < 0.01:
+            # packet loss
+            print(f"({self.conn_num})     >>>>>>Packet loss: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num}<<<<<<")
+            return
+        
         tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
+        
         with self.send_buf_lock:
             self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
     
-    def start_recv_thread(self):
+    def start_threads(self):
         self.t = threading.Thread(target=self._recv, args=(1024,))
+        self.t2 = threading.Thread(target=self.check_timer)
         self.t.start()
+        self.t2.start()
 
     def terminate(self):
         # terminate thread
@@ -347,6 +394,8 @@ class Connection:
         print(f"({self.conn_num}) Terminating connection with {self.dst_ip}:{self.dst_port}")
         if self.t and self.t.is_alive():
             self.t.join()
+        if self.t2 and self.t2.is_alive():
+            self.t2.join()
         print(f"({self.conn_num}) Connection with {self.dst_ip}:{self.dst_port} terminated")
     
     def append_unhandled(self, data):
@@ -356,7 +405,7 @@ class Connection:
 
     def _recvfrom(self):
         while not self.unhandled_buf:
-            time.sleep(0.01)
+            time.sleep(0.0001)
             if not self.listening:
                 return None, None
         with self.unhandled_buf_lock:
@@ -372,6 +421,7 @@ class Connection:
             if not data:
                 continue
             tcp_seg = TCP_seg().unpack(data)
+            
             if not verify_checksum(tcp_seg, socket.inet_aton(addr[0]), socket.inet_aton(self.src_ip)):
                 print(f"({self.conn_num})     Checksum failed")
                 print(f"({self.conn_num})     Expected checksum: {compute_checksum(tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip)))}")
@@ -383,15 +433,22 @@ class Connection:
                 self.print_seg(tcp_seg)
                 continue
             
-            if tcp_seg.seq_num > self.ack_num and self.ack_num!=0:
+            if tcp_seg.seq_num != self.ack_num and self.ack_num != 0:
                 print(f"({self.conn_num})     Expected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}")
-                continue
+                if self.inflight_buf:
+                    with self.inflight_buf_lock:
+                        re_seg = self.inflight_buf.pop(0)[1]
+                    self._resend(re_seg)
+                    continue
+
 
             self.ack_num = max(self.ack_num, self._get_next_seq(tcp_seg)) # their seq
             self.last_acked = tcp_seg.ack_num # my seq
 
             if self.inflight_buf:
-                self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked]
+                with self.inflight_buf_lock:
+                    self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked]
+
             
             #self.cwnd = self.cwnd + 1 if self.cwnd < self.threshold else self.cwnd + 1/self.cwnd
             
@@ -438,7 +495,7 @@ class Connection:
     def _get_recv_buf(self):
         # pop the front
         while not self.recv_buf:
-            time.sleep(0.01)
+            time.sleep(0.0001)
             
         with self.recv_buf_lock:
             #print(f"({self.conn_num})     buf: {len(self.recv_buf)}")
@@ -450,7 +507,6 @@ class Connection:
 
     def handshake(self, client=True):
         while self.state != "ESTABLISHED":
-            time.sleep(0.01)
             if client:
                 if self.state == "CLOSED":
                     self._send(flags=['SYN'])
@@ -495,6 +551,7 @@ class Connection:
         if tcp_seg.flags == 1:
             self._send(flags=['ACK'])
             self.update_state("TIME_WAIT")
+            self.listening = False
             time.sleep(2)
             self.update_state("CLOSED")
         self.terminate()
@@ -502,20 +559,16 @@ class Connection:
         
         
     def send(self, data):
-        time.sleep(0.01)
         max_size = self.mss - 20
         size = len(data)
         while len(data) > 0:
-            if len(self.inflight_buf) <= self.cwnd:
-                with self.send_data_buf_lock:
-                    self.send_data_buf.append(data[:max_size])
-                if not self.first_mes:
-                    self._send(flags=['ACK'])
-                    self.first_mes = True   
+            with self.send_data_buf_lock:
+                self.send_data_buf.append(data[:max_size])
+            if not self.first_mes:
+                self._send(flags=['ACK'])
+                self.first_mes = True   
                 
-                data = data[max_size:]
-            else:
-                time.sleep(0.001)
+            data = data[max_size:]
         #print(f"({self.conn_num}) (Sent data with size {size})")
 
         #self._send(flags=['ACK'], data=data)
