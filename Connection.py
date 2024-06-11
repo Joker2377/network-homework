@@ -92,9 +92,13 @@ class TCPSocket:
                 for k in keys:
                     if self.connections[k].send_buf:
                         with self.connections[k].send_buf_lock:
-                            while self.connections[k].send_buf:
-                                data, addr = self.connections[k].send_buf.pop(0)    
-                                self.sock.sendto(data, addr)
+                            if self.connections[k].send_buf:
+                                tcp_seg, addr = self.connections[k].send_buf.pop(0)
+                            tcp_seg.timer = time.time()
+                            with self.connections[k].inflight_buf_lock:
+                                self.connections[k].inflight_buf.append((tcp_seg.seq_num, tcp_seg))
+                            tcp_seg = tcp_seg.pack(socket.inet_aton(self.connections[k].src_ip), socket.inet_aton(self.connections[k].dst_ip))
+                            self.sock.sendto(tcp_seg, addr)
             except KeyError:
                 pass
 
@@ -247,7 +251,8 @@ class Connection:
         self.threshold = 64
         self.mss = 1024
 
-        self.rtt = 0.2
+        self.rtt = 0.03
+        self.rto = 1
 
         self.listening = True
         self.recv_buf_lock = threading.Lock()
@@ -313,9 +318,14 @@ class Connection:
                 with self.inflight_buf_lock:
                     copy = self.inflight_buf.copy()
                 curr_time = time.time()
-                late_list = [(curr_time - seg.timer, seg) for seq, seg in copy if (curr_time - seg.timer) > self.rtt]
+                late_list = [(curr_time - seg.timer, seg) for seq, seg in copy if (curr_time - seg.timer) > self.rto]
                 for sample_rtt, seg in late_list:
-                    self.rtt = 0.5*self.rtt + 0.5*sample_rtt
+                    if seg.timer == 0:
+                        continue
+                    self.rtt = 0.875*self.rtt + 0.125*sample_rtt
+                    devrtt = 0.75*self.rtt + 0.25*abs(sample_rtt - self.rtt)
+                    self.rto = self.rtt + 4*devrtt
+                    self.rto = max(0.1, self.rto)
                     print(f"({self.conn_num})     Current RTT: {self.rtt}")
                     print(f"({self.conn_num})     Timeout: ACK {seg.ack_num} SEQ {seg.seq_num}")
                     self._resend(seg)
@@ -327,10 +337,10 @@ class Connection:
         tcp_seg.timer = time.time()
         
         with self.inflight_buf_lock:
-            self.inflight_buf.insert(0, (tcp_seg.seq_num, tcp_seg))
-        tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
+            self.inflight_buf.append((tcp_seg.seq_num, tcp_seg))
+#        tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
         with self.send_buf_lock:
-            self.send_buf.insert(0, (tcp_seg, (self.dst_ip, self.dst_port)))
+            self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
 
     def _send(self, flags=[], nodata=False):
         if not self.listening:
@@ -377,7 +387,7 @@ class Connection:
             print(f"({self.conn_num})     >>>>>>Packet loss: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num}<<<<<<")
             return
         
-        tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
+#        tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
         
         with self.send_buf_lock:
             self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
@@ -438,6 +448,7 @@ class Connection:
                 if self.inflight_buf:
                     with self.inflight_buf_lock:
                         re_seg = self.inflight_buf.pop(0)[1]
+                    re_seg.ack_num = self.ack_num
                     self._resend(re_seg)
                     continue
 
