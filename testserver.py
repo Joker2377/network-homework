@@ -114,7 +114,11 @@ class Server:
         self.conn.send(mes)
 
 def new_connection(conn):
-    conn.handshake(client=False)
+    try:
+        conn.handshake(client=False)
+    except AttributeError:
+        print("Connection Closed")
+        return
     conn.send(b'')
     s = Server(conn)
     s.handle()
