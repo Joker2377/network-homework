@@ -246,6 +246,7 @@ class Connection:
         self.unhandled_buf = []
         self.send_buf = []
         self.send_data_buf = []
+        self.delayed_ack_buf = []
 
         self.cwnd = 1
         self.threshold = 64
@@ -260,9 +261,13 @@ class Connection:
         self.send_buf_lock = threading.Lock()
         self.send_data_buf_lock = threading.Lock()
         self.inflight_buf_lock = threading.Lock()
+        self.delayed_ack_buf_lock = threading.Lock()
 
         self.conn_num = 0
         self.first_mes = False
+        self.waiting_for_ack = False
+        self.send_next = False
+        self.delay_ack_function = True
     
 
         self.start_threads()
@@ -325,8 +330,10 @@ class Connection:
                     self.rtt = 0.875*self.rtt + 0.125*sample_rtt
                     devrtt = 0.75*self.rtt + 0.25*abs(sample_rtt - self.rtt)
                     self.rto = self.rtt + 4*devrtt
-                    self.rto = max(0.1, self.rto)
-                    print(f"({self.conn_num})     Current RTT: {self.rtt}")
+                    self.rto = max(1, self.rto)
+                    self.threshold = max(1, self.cwnd/2)
+                    self.cwnd = self.threshold
+                    print(f"({self.conn_num})     Current RTO: {self.rto}")
                     print(f"({self.conn_num})     Timeout: ACK {seg.ack_num} SEQ {seg.seq_num}")
                     self._resend(seg)
 
@@ -342,7 +349,17 @@ class Connection:
         with self.send_buf_lock:
             self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
 
-    def _send(self, flags=[], nodata=False):
+    def _send_control(self):
+        while self.listening:
+            if self.send_next:
+                count = 0
+                while count<self.cwnd:
+                    count += 1
+                    self._send(flags=['ACK'], nodata=False)
+                self.send_next = False
+
+
+    def _send(self, flags=[], nodata=True):
         if not self.listening:
             return
 
@@ -382,7 +399,7 @@ class Connection:
         with self.inflight_buf_lock:
             self.inflight_buf.append((tcp_seg.seq_num, tcp_seg))
         
-        if random.random() < 0.01:
+        if random.random() < 10e-6:
             # packet loss
             print(f"({self.conn_num})     >>>>>>Packet loss: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num}<<<<<<")
             return
@@ -395,8 +412,12 @@ class Connection:
     def start_threads(self):
         self.t = threading.Thread(target=self._recv, args=(1024,))
         self.t2 = threading.Thread(target=self.check_timer)
+        self.t3 = threading.Thread(target=self._delay_ack)
+        self.t4 = threading.Thread(target=self._send_control)
         self.t.start()
         self.t2.start()
+        self.t3.start()
+        self.t4.start()
 
     def terminate(self):
         # terminate thread
@@ -406,6 +427,10 @@ class Connection:
             self.t.join()
         if self.t2 and self.t2.is_alive():
             self.t2.join()
+        if self.t3 and self.t3.is_alive():
+            self.t3.join()
+        if self.t4 and self.t4.is_alive():
+            self.t4.join()
         print(f"({self.conn_num}) Connection with {self.dst_ip}:{self.dst_port} terminated")
     
     def append_unhandled(self, data):
@@ -425,6 +450,26 @@ class Connection:
                 return self.unhandled_buf.pop(0)
             return None
 
+    def _delay_ack(self):
+        while self.listening:
+            while not self.waiting_for_ack and self.listening:
+                time.sleep(0.0001)
+
+            count = 0
+            while self.waiting_for_ack:
+                count += 1
+                time.sleep(0.01)
+                #600 ms
+                if count > 60:
+                    with self.delayed_ack_buf_lock:
+                        old_seg = self.delayed_ack_buf.pop(0)
+                    with self.recv_buf_lock:
+                        self.recv_buf.append(old_seg)
+                    self._send(flags=['ACK'])
+                    self.waiting_for_ack = False
+                    break
+            
+
     def _recv(self, size):
         while self.listening:
             data, addr = self._recvfrom()
@@ -443,25 +488,27 @@ class Connection:
                 self.print_seg(tcp_seg)
                 continue
             
-            if tcp_seg.seq_num != self.ack_num and self.ack_num != 0:
-                print(f"({self.conn_num})     Expected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}")
-                if self.inflight_buf:
-                    with self.inflight_buf_lock:
-                        re_seg = self.inflight_buf.pop(0)[1]
-                    re_seg.ack_num = self.ack_num
-                    self._resend(re_seg)
-                    continue
 
-
-            self.ack_num = max(self.ack_num, self._get_next_seq(tcp_seg)) # their seq
-            self.last_acked = tcp_seg.ack_num # my seq
-
+            self.last_acked = tcp_seg.ack_num # my seq  
             if self.inflight_buf:
                 with self.inflight_buf_lock:
-                    self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked]
+                    self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked]                      
 
+            if tcp_seg.seq_num != self.ack_num and self.ack_num != 0:
+                print(f"({self.conn_num})     VVVExpected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}VVV")
+                if self.inflight_buf:
+                    with self.inflight_buf_lock:
+                        re_seg = self.inflight_buf[0][1]
+                    re_seg.ack_num = self.ack_num
+                    if tcp_seg.ack_num == self._get_next_seq(re_seg):
+                        self._send(flags=['ACK'], nodata=True)
+                    else:
+                        self._resend(re_seg)
+                    continue
             
-            #self.cwnd = self.cwnd + 1 if self.cwnd < self.threshold else self.cwnd + 1/self.cwnd
+            self.ack_num = max(self.ack_num, self._get_next_seq(tcp_seg)) # their seq
+
+            self.cwnd = self.cwnd + 1 if self.cwnd < self.threshold else self.cwnd + 1/self.cwnd
             
             # list of flags raised
             flags = {
@@ -490,8 +537,30 @@ class Connection:
                 'ECE': (tcp_seg.flags & 64) == 64,
                 'CWR': (tcp_seg.flags & 128) == 128
             }
+
+            prev_seg = None
+            if self.state == "ESTABLISHED" and not flags['FIN'] and not flags['SYN'] and self.delay_ack_function:
+                if not self.delayed_ack_buf:
+                    with self.delayed_ack_buf_lock:
+                        self.delayed_ack_buf.append(tcp_seg)
+                    self.waiting_for_ack = True
+                    continue
+                else:
+                    self.waiting_for_ack = False
+                    with self.delayed_ack_buf_lock:
+                        prev_seg = self.delayed_ack_buf.pop(0)
+                    print(f"({self.conn_num})     VVV (Delayed ACK) VVV")
+            else:
+                if self.delayed_ack_buf:
+                    with self.delayed_ack_buf_lock:
+                        prev_seg = self.delayed_ack_buf.pop(0)
+                    self.waiting_for_ack = False
+
             if self.state == "ESTABLISHED" and not flags['FIN'] and not flags['SYN']:
-                self._send(flags=['ACK'])
+                if self.send_data_buf:
+                    self.send_next = True
+                else:
+                    self._send(flags=['ACK'], nodata=True) # don't grow if no data to send
             elif flags['FIN'] and self.conn_num!=0:
                 self.update_state("CLOSE_WAIT")
                 self.update_state("LAST_ACK")
@@ -500,6 +569,8 @@ class Connection:
                 self.update_state("CLOSED")
 
             with self.recv_buf_lock:
+                if prev_seg:
+                    self.recv_buf.append(prev_seg)
                 self.recv_buf.append(tcp_seg)
             #print(f"({self.conn_num})     buf: {len(self.recv_buf)}")
 
@@ -576,7 +647,7 @@ class Connection:
             with self.send_data_buf_lock:
                 self.send_data_buf.append(data[:max_size])
             if not self.first_mes:
-                self._send(flags=['ACK'])
+                self._send(flags=['ACK'], nodata=True)
                 self.first_mes = True   
                 
             data = data[max_size:]

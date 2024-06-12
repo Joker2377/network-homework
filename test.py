@@ -9,6 +9,7 @@ import argparse
 import re
 import hashlib
 import os
+import builtins
 
 parser = argparse.ArgumentParser(description="TCP Server")
 parser.add_argument('-i', '--ip', type=str, help="IP Address", default='127.0.0.1')
@@ -66,6 +67,7 @@ def file_transfer(conn, filename):
     conn.send(mes)
 
 def task3(conn, filename):
+    print(f"(task3: {filename})")
     mes = b'FILE_REQUEST<'+filename.encode()+b'>FILE_END'
     conn.send(mes)
     buf = b''
@@ -78,10 +80,14 @@ def task3(conn, filename):
         if b'FILE_TRANSFER' in data:
             continue
         buf += data
-    buf = buf.decode()
+
     
     print(f"Received file:")
-    print(f"{filename}: \n{buf}")
+
+    print(f"{filename}: size {len(buf)} bytes")
+    basename = os.path.basename(filename)
+    with open(f"./received/{basename}", 'wb') as f:
+        f.write(buf)
 
 
 def worker():
@@ -104,7 +110,7 @@ def worker():
 
 
 if __name__ == "__main__":
-    n = 2
+    n = 1
     threads = []
     for i in range(n):
         time.sleep(0.1)
