@@ -115,6 +115,7 @@ class Server:
 
 def new_connection(conn):
     try:
+        conn.delay_ack_function = False
         conn.handshake(client=False)
     except AttributeError:
         print("Connection Closed")
