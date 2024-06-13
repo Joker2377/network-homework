@@ -247,7 +247,7 @@ class Connection:
         self.unhandled_buf = []
         self.send_buf = []
         self.send_data_buf = []
-        self.delayed_ack_buf = []
+        self.delayed_ack = False
 
         self.cwnd = 1
         self.threshold = 64
@@ -262,15 +262,15 @@ class Connection:
         self.send_buf_lock = threading.Lock()
         self.send_data_buf_lock = threading.Lock()
         self.inflight_buf_lock = threading.Lock()
-        self.delayed_ack_buf_lock = threading.Lock()
+        self.delayed_ack_lock = threading.Lock()
         self.seq_num_lock = threading.Lock()
 
         self.conn_num = 0
         self.first_mes = False
         self.waiting_for_ack = False
         self.send_next = False
-        self.delay_ack_function = True
-        self.constant_cwnd = False
+        self.delay_ack_function = False
+        self.constant_cwnd = True
 
         self.last_received_seq = 0
     
@@ -363,7 +363,7 @@ class Connection:
                     self._send(flags=['ACK'], nodata=False)
                     if not self.send_data_buf:
                         break
-                    time.sleep(0.01)
+                    time.sleep(0.0001)
                 self.send_next = False
 
 
@@ -481,9 +481,9 @@ class Connection:
                 time.sleep(0.01)
                 #600 ms
                 if count > 60 and self.waiting_for_ack:
-                    if self.delayed_ack_buf:
-                        with self.delayed_ack_buf_lock:
-                            self.delayed_ack_buf = []
+                    if self.delayed_ack:
+                        with self.delayed_ack_lock:
+                            self.delayed_ack = False
                     self._send(flags=['ACK'])
                     self.waiting_for_ack = False
                     break
@@ -515,7 +515,7 @@ class Connection:
 
             if tcp_seg.seq_num != self.ack_num and self.ack_num != 0:
                 self.threshold = max(1, self.cwnd/2)
-                self.cwnd = self.threshold
+                self.cwnd = 1
                 print(f"({self.conn_num})     |Expected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}")
                 print(f"({self.conn_num})     L->", end="")
                 if self.inflight_buf:
@@ -568,9 +568,9 @@ class Connection:
 
             
             if self.state == "ESTABLISHED" and not flags['FIN'] and not flags['SYN'] and self.delay_ack_function:
-                if not self.delayed_ack_buf:
-                    with self.delayed_ack_buf_lock:
-                        self.delayed_ack_buf.append(tcp_seg)
+                if not self.delayed_ack:
+                    with self.delayed_ack_lock:
+                        self.delayed_ack = True
                     self.last_received_seq = max(tcp_seg.seq_num, self.last_received_seq)
                     if tcp_seg.seq_num == self.last_received_seq:
                         if tcp_seg not in self.recv_buf:
@@ -584,15 +584,16 @@ class Connection:
                     print(f"({self.conn_num})     L->", end="")
 
             else:
-                if self.delayed_ack_buf:
-                    with self.delayed_ack_buf_lock:
-                        self.delayed_ack_buf = []
+                if self.delayed_ack:
+                    with self.delayed_ack_lock:
+                        self.delayed_ack = False
                     self.waiting_for_ack = False
 
             if self.state == "ESTABLISHED" and not flags['FIN'] and not flags['SYN']:
                 self.send_next = True
 
             elif flags['FIN'] and self.conn_num!=0:
+                self._send(flags=['ACK'])
                 self.update_state("CLOSE_WAIT")
                 
             elif self.state == "LAST_ACK" and self.conn_num!=0:

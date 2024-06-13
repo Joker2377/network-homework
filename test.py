@@ -17,8 +17,11 @@ parser.add_argument('-p', '--port', type=int, help="Port Number", default=12345)
 parser.add_argument('-d', '--dns', type=str, help="DNS Query", default='')
 parser.add_argument('-c', '--cal', type=str, help="Calculation", default='')
 parser.add_argument('-f', '--file', type=str, help="File Transfer", default='')
+parser.add_argument('-o', '--output', type=int, help="Output or not", default=0)
 
 args = parser.parse_args()
+
+recv_buf_size = 512*1024
 
 def task1(conn):
     # dns query
@@ -71,6 +74,11 @@ def task3(conn, filename):
     mes = b'FILE_REQUEST<'+filename.encode()+b'>FILE_END'
     conn.send(mes)
     buf = b''
+    total_size = 0
+    basename = os.path.basename(filename)
+    with open(f"./received/{basename}", 'w+') as f:
+        pass
+
     while conn.state != 'CLOSED':
         data = conn.recv(1024)
         if data == b'FILE_BEGIN':
@@ -80,14 +88,23 @@ def task3(conn, filename):
         if b'FILE_TRANSFER' in data:
             continue
         buf += data
-
-    
-    print(f"Received file:")
-
-    print(f"{filename}: size {len(buf)} bytes")
-    basename = os.path.basename(filename)
-    with open(f"./received/{basename}", 'wb') as f:
+        if len(buf) > recv_buf_size:
+            total_size += len(buf)
+            with open(f"./received/{basename}", 'ab') as f:
+                print(">>>>>>>>>>>>>>>>>>>>>>>>>Writing to file<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+                f.write(buf)
+            buf = b''
+    total_size += len(buf)
+    with open(f"./received/{basename}", 'ab') as f:
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>Writing to file<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         f.write(buf)
+    print(f"Received file:")
+    print(f"{filename}: size {total_size} bytes")
+    if args.output:
+        print(f"Output file: ./received/{basename}")
+        with open(f"./received/{basename}", 'r') as f:
+            print(f.read())
+    
 
 
 def worker():
