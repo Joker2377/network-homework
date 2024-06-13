@@ -270,7 +270,7 @@ class Connection:
         self.waiting_for_ack = False
         self.send_next = False
         self.delay_ack_function = False
-        self.constant_cwnd = True
+        self.constant_cwnd = False
 
         self.last_received_seq = 0
     
@@ -363,7 +363,7 @@ class Connection:
                     self._send(flags=['ACK'], nodata=False)
                     if not self.send_data_buf:
                         break
-                    time.sleep(0.0001)
+                    
                 self.send_next = False
 
 
@@ -484,7 +484,7 @@ class Connection:
                     if self.delayed_ack:
                         with self.delayed_ack_lock:
                             self.delayed_ack = False
-                    self._send(flags=['ACK'])
+                    self.send_next = True
                     self.waiting_for_ack = False
                     break
             
@@ -506,37 +506,6 @@ class Connection:
                 print()
                 self.print_seg(tcp_seg)
                 continue
-            
-            self.last_acked = tcp_seg.ack_num # my seq  
-            if self.inflight_buf:
-                with self.inflight_buf_lock:
-                    self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked] 
-                    
-
-            if tcp_seg.seq_num != self.ack_num and self.ack_num != 0:
-                self.threshold = max(1, self.cwnd/2)
-                self.cwnd = 1
-                print(f"({self.conn_num})     |Expected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}")
-                print(f"({self.conn_num})     L->", end="")
-                if self.inflight_buf:
-                    with self.inflight_buf_lock:
-                        re_seg = [seg for seq, seg in self.inflight_buf if seq == tcp_seg.ack_num]
-                    if re_seg:
-                        re_seg[0].ack_num = self.ack_num
-                        self._resend(re_seg[0])
-                else:
-                    self._send(flags=['ACK'], nodata=True)
-                continue
-
-            
-            self.ack_num = max(self.ack_num, self._get_next_seq(tcp_seg)) # their seq
-            
-
-            if self.state == "ESTABLISHED" and not self.constant_cwnd:
-                self.cwnd = self.cwnd + 1 if self.cwnd < self.threshold else self.cwnd + 1/self.cwnd
-                print(f"({self.conn_num})     |(cwnd: {self.cwnd*self.mss} MSS: {self.mss} threshold: {self.threshold})")
-            else:
-                self.cwnd = 1
             
             # list of flags raised
             flags = {
@@ -566,6 +535,41 @@ class Connection:
                 'CWR': (tcp_seg.flags & 128) == 128
             }
 
+            self.last_acked = tcp_seg.ack_num # my seq  
+            if self.inflight_buf:
+                with self.inflight_buf_lock:
+                    self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked] 
+                    
+
+            if tcp_seg.seq_num != self.ack_num and self.ack_num != 0:
+                self.threshold = max(1, self.cwnd/2)
+                self.cwnd = 1
+                print(f"({self.conn_num})     |Expected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}")
+                print(f"({self.conn_num})     L->", end="")
+                if self.inflight_buf:
+                    with self.inflight_buf_lock:
+                        re_seg = [seg for seq, seg in self.inflight_buf if seq == tcp_seg.ack_num]
+                    if re_seg:
+                        re_seg[0].ack_num = self.ack_num
+                        self._resend(re_seg[0])
+                else:
+                    self._send(flags=['ACK'], nodata=True)
+                continue
+
+            
+            self.ack_num = max(self.ack_num, self._get_next_seq(tcp_seg)) # their seq
+            
+
+            if self.state == "ESTABLISHED" and not self.constant_cwnd:
+                if self.cwnd < self.threshold:
+                    print(f"({self.conn_num})     >>>slow start mode<<<")
+                else:
+                    print(f"({self.conn_num})     >>>congestion avoidance mode<<<")
+                self.cwnd = self.cwnd + 1 if self.cwnd < self.threshold else self.cwnd + 1/self.cwnd
+                print(f"({self.conn_num})     |(cwnd: {self.cwnd*self.mss} MSS: {self.mss} threshold: {self.threshold})")
+            else:
+                self.cwnd = 1
+
             
             if self.state == "ESTABLISHED" and not flags['FIN'] and not flags['SYN'] and self.delay_ack_function:
                 if not self.delayed_ack:
@@ -581,12 +585,9 @@ class Connection:
                 else:
                     self.waiting_for_ack = False
                     print(f"({self.conn_num})     |(Delayed ACK)")
-                    print(f"({self.conn_num})     L->", end="")
 
             else:
                 if self.delayed_ack:
-                    with self.delayed_ack_lock:
-                        self.delayed_ack = False
                     self.waiting_for_ack = False
 
             if self.state == "ESTABLISHED" and not flags['FIN'] and not flags['SYN']:
