@@ -586,7 +586,7 @@ class Connection:
 
             
             if self.ack_num==0 or self.last_received_seq < tcp_seg.seq_num:
-                if self.len(self.recv_buf) >= self.recv_buf_size:
+                if len(self.recv_buf) >= self.recv_buf_size:
                     print(f"({self.conn_num})     |Receive buffer full")
                 if self.ack_num == 0 or not self.last_seg or tcp_seg.seq_num == self._get_next_seq(self.last_seg):
                     with self.recv_buf_lock:
