@@ -1,0 +1,560 @@
+****NEW CLIENT CREATED****
+Number of Threads: 1
+>1 | Server State: LISTEN
+>1 | Server is listening on 127.0.0.2:18501
+(0) sent: SYN : (0) ACK 0 SEQ 9931: 0 bytes
+(0) (SYN_SENT)
+(0) receive: SYN, ACK : (0) ACK 9932 SEQ 5380: 0 bytes
+(0) sent: ACK : (0) ACK 5381 SEQ 9932: 0 bytes
+(0) (ESTABLISHED)
+(task3: ./files/pg43.txt)
+(0) receive: ACK : (0) ACK 9933 SEQ 5381: 0 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 2048 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 5382 SEQ 9933: 38 bytes
+(0) receive: ACK : (0) ACK 9971 SEQ 5382: 0 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 3072 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 5383 SEQ 9971: 0 bytes
+(0) receive: ACK : (0) ACK 9972 SEQ 5383: 39 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 4096 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9972 SEQ 5422: 10 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 5120 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9972 SEQ 5432: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 6144 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 6436 SEQ 9972: 0 bytes
+(0) receive: ACK : (0) ACK 9973 SEQ 6436: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 7168 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9973 SEQ 7440: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 8192 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9973 SEQ 8444: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 9216 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9973 SEQ 9448: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 10240 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 10452 SEQ 9973: 0 bytes
+(0) receive: ACK : (0) ACK 9974 SEQ 10452: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 11264 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9974 SEQ 11456: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 12288 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9974 SEQ 12460: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 13312 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9974 SEQ 13464: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 14336 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9974 SEQ 14468: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 15360 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 15472 SEQ 9974: 0 bytes
+(0) receive: ACK : (0) ACK 9975 SEQ 15472: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 16384 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9975 SEQ 16476: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 17408 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9975 SEQ 17480: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 18432 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9975 SEQ 18484: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 19456 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9975 SEQ 19488: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 20480 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9975 SEQ 20492: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 21504 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 21496 SEQ 9975: 0 bytes
+(0) receive: ACK : (0) ACK 9976 SEQ 21496: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 22528 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9976 SEQ 22500: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 23552 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 23504 SEQ 9976: 0 bytes
+(0) receive: ACK : (0) ACK 9976 SEQ 23504: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 24576 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9976 SEQ 24508: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 25600 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9976 SEQ 25512: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 26624 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9976 SEQ 26516: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 27648 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9976 SEQ 27520: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 28672 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 28524 SEQ 9977: 0 bytes
+(0) receive: ACK : (0) ACK 9978 SEQ 28524: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 29696 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9978 SEQ 29528: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 30720 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9978 SEQ 30532: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 31744 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9978 SEQ 31536: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 32768 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9978 SEQ 32540: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 33792 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9978 SEQ 33544: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 34816 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9978 SEQ 34548: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 35840 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9978 SEQ 35552: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 36864 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 36556 SEQ 9978: 0 bytes
+(0) receive: ACK : (0) ACK 9978 SEQ 36556: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 37888 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 37560 SEQ 9979: 0 bytes
+(0) receive: ACK : (0) ACK 9979 SEQ 37560: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 38912 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9979 SEQ 38564: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 39936 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9979 SEQ 39568: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 40960 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9979 SEQ 40572: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 41984 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9979 SEQ 41576: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 43008 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9979 SEQ 42580: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 44032 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9979 SEQ 43584: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 45056 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9979 SEQ 44588: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 46080 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9980 SEQ 45592: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 47104 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 46596 SEQ 9980: 0 bytes
+(0) receive: ACK : (0) ACK 9980 SEQ 46596: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 48128 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 47600 SEQ 9981: 0 bytes
+(0) receive: ACK : (0) ACK 9981 SEQ 47600: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 49152 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 48604: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 50176 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 49608: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 51200 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 50612: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 52224 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 51616: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 53248 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 52620: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 54272 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 53624: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 55296 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 54628: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 56320 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 55632: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 57344 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9981 SEQ 56636: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 58368 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 57640 SEQ 9982: 0 bytes
+(0) receive: ACK : (0) ACK 9983 SEQ 57640: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 59392 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 58644: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 60416 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 59648: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 61440 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 60652: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 62464 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 61656: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 63488 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 62660: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 64512 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 63664: 1004 bytes
+(0)     >>>slow start mode<<<
+(0)     |(cwnd: 65536 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 64668: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65552.0 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 65672: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65567.99609470344 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 66676: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65583.98828696879 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 67680: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65599.97657965102 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 68684: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65615.96097560163 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 69688: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65631.94147766865 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9983 SEQ 70692: 276 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65647.91808869664 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 70968 SEQ 9983: 0 bytes
+(0) receive: ACK : (0) ACK 9984 SEQ 70968: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65663.89081152668 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 71972: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65679.85964899643 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 72976: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65695.82460394005 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 73980: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65711.78567918831 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 74984: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65727.74287756851 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 75988: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65743.69620190453 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 76992: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65759.64565501681 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 77996: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65775.59123972237 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 79000: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65791.53295883484 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 80004: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65807.47081516442 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 81008: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65823.40481151789 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 82012: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65839.33495069867 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 83016: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65855.26123550675 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 84020: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65871.18366873878 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9984 SEQ 85024: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65887.10225318799 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 86028 SEQ 9984: 0 bytes
+(0) receive: ACK : (0) ACK 9985 SEQ 86028: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65903.01699164424 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 87032: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65918.92788689405 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 88036: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65934.83494172053 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 89040: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65950.73815890348 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 90044: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65966.63754121932 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 91048: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65982.53309144112 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 92052: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 65998.42481233864 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 93056: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66014.31270667826 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 94060: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66030.19677722307 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 95064: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66046.07702673282 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 96068: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66061.95345796393 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 97072: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66077.82607366954 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 98076: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66093.69487659945 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 99080: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66109.55986950017 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 100084 SEQ 9985: 0 bytes
+(0) receive: ACK : (0) ACK 9985 SEQ 100084: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66125.42105511493 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9985 SEQ 101088: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66141.27843618364 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 102092 SEQ 9986: 0 bytes
+(0) receive: ACK : (0) ACK 9986 SEQ 102092: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66157.13201544294 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 103096: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66172.98179562621 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 104100: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66188.82777946352 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 105104: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66204.6699696817 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 106108: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66220.50836900428 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 107112: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66236.34298015159 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 108116: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66252.17380584065 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 109120: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66268.00084878528 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 110124: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66283.82411169603 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 111128: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66299.64359728021 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 112132: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66315.45930824195 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 113136: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66331.27124728207 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9986 SEQ 114140: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66347.07941709826 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 115144 SEQ 9987: 0 bytes
+(0) receive: ACK : (0) ACK 9988 SEQ 115144: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66362.88382038492 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 116148: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66378.68445983328 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 117152: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66394.48133813139 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 118156: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66410.27445796404 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 119160: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66426.06382201287 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 120164: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66441.84943295634 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 121168: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66457.63129346969 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 122172: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66473.40940622501 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 123176: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66489.18377389121 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 124180: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66504.95439913405 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 125184: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66520.7212846161 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 126188: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66536.48443299679 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 127192: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66552.2438469324 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 128196: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66567.99952907606 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 129200: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66583.75148207777 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 130204 SEQ 9988: 0 bytes
+(0) receive: ACK : (0) ACK 9988 SEQ 130204: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66599.4997085844 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 131208: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66615.24421123964 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 132212: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66630.98499268413 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9988 SEQ 133216: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66646.72205555534 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 134220 SEQ 9989: 0 bytes
+(0) receive: ACK : (0) ACK 9990 SEQ 134220: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66662.45540248763 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 135224: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66678.18503611226 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 136228: 276 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66693.91095905741 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 136504: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66709.63317394811 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 137508: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66725.35168340635 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 138512: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66741.06649005099 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 139516: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66756.77759649782 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 140520: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66772.48500535956 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 141524: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66788.18871924584 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 142528: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66803.88874076323 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 143532: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66819.58507251524 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 144536: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66835.27771710233 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 145540: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66850.96667712189 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 146544: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66866.65195516827 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 147548: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66882.33355383278 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 148552: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66898.01147570368 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 149556 SEQ 9990: 0 bytes
+(0) receive: ACK : (0) ACK 9990 SEQ 149556: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66913.6857233662 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 150560: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66929.35629940254 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 151564: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66945.0232063919 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 152568: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66960.68644691042 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9990 SEQ 153572: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66976.34602353127 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 154576 SEQ 9991: 0 bytes
+(0) receive: ACK : (0) ACK 9991 SEQ 154576: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 66992.00193882459 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 155580: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67007.6541953575 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 156584: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67023.30279569417 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 157588: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67038.94774239571 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 158592: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67054.5890380203 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 159596: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67070.22668512311 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 160600: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67085.86068625632 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 161604: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67101.49104396916 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 162608: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67117.11776080787 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 163612: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67132.74083931575 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 164616: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67148.36028203313 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9991 SEQ 165620: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67163.97609149736 MSS: 1024 threshold: 64)
+(0) sent: ACK : (0) ACK 166624 SEQ 9992: 0 bytes
+(0) receive: ACK : (0) ACK 9993 SEQ 166624: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67179.58827024288 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9993 SEQ 167628: 1004 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67195.19682080115 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9993 SEQ 168632: 367 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67210.80174570072 MSS: 1024 threshold: 64)
+(0) receive: ACK : (0) ACK 9993 SEQ 168999: 8 bytes
+(0)     >>>congestion avoidance mode<<<
+(0)     |(cwnd: 67226.40304746717 MSS: 1024 threshold: 64)
+>>>>>>>>>>>>>>>>>>>>>>>>>Writing to file<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+(0) sent: ACK : (0) ACK 169007 SEQ 9993: 0 bytes
+Received file:
+./files/pg43.txt: size 163567 bytes
+BUFFER: 0
+(0) sent: FIN : (0) ACK 169007 SEQ 9994: 0 bytes
+(0) (FIN_WAIT_1)
+(0) receive: ACK : (0) ACK 9995 SEQ 169007: 0 bytes
+(0) (FIN_WAIT_2)
+(0) receive: FIN : (0) ACK 9995 SEQ 169008: 0 bytes
+(0) sent: ACK : (0) ACK 169009 SEQ 9995: 0 bytes
+(0) (TIME_WAIT)
+(0) (CLOSED)
+(0) Terminating connection with 127.0.0.1:12345
+(0) Connection with 127.0.0.1:12345 terminated
+Socket closed
+Thread 1 Closed

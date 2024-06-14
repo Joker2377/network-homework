@@ -113,6 +113,8 @@ def worker():
     client = TCPSocket(src_ip='127.0.0.2', src_port=src_port)
     client.bind(src_ip='127.0.0.2', src_port=src_port)
     conn = client.connect(dst_ip='127.0.0.1', dst_port=12345)
+    conn.constant_cwnd = True
+    conn.fast_retransmit_function = False
     conn.handshake()
     if args.dns:
         task1(conn)

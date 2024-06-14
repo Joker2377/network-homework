@@ -247,6 +247,7 @@ class Connection:
         self.unhandled_buf = []
         self.send_buf = []
         self.send_data_buf = []
+        self.out_of_order_buf = []
         self.delayed_ack = False
 
         self.cwnd = 1
@@ -272,15 +273,19 @@ class Connection:
         self.waiting_for_ack = False
         self.send_next = False
 
-        self.delay_ack_function = True
-        self.constant_cwnd = False
+        self.delay_ack_function = False
+        self.constant_cwnd = True
         self.fast_retransmit_function = True
 
         self.last_received_seq = 0
+        self.last_seg = None
 
         self.duplicate_ack = 0
 
         self.total_drop = 0
+
+        self.measure = 3
+
 
         self.start_threads()
 
@@ -330,24 +335,23 @@ class Connection:
 
     def check_timer(self):
         while self.listening:
-            time.sleep(0.00001)
+            time.sleep(0.01)
             if self.inflight_buf:
+                #print(f"({self.conn_num})     |Timer acquiring lock")
+                #print(f"({self.conn_num})     |Timer acquired lock")
+                curr_time = time.time();
+                curr_rto = self.rto
                 with self.inflight_buf_lock:
-                    copy = self.inflight_buf.copy()
-                curr_time = time.time()
-                late_list = [(curr_time - seg.timer, seg) for seq, seg in copy if (curr_time - seg.timer) > self.rto]
-                for sample_rtt, seg in late_list:
+                    inflight_buf_copy = self.inflight_buf.copy()
+                late_list = [seg for seq, seg in inflight_buf_copy if curr_time - seg.timer > self.rto]
+                if late_list:
+                    print("LATE LIST: ", *[(curr_time - seg.timer, seg.seq_num) for seg in late_list], sep="\n")
+                for seg in late_list:
                     if seg.timer == 0:
                         continue
-                    
-                    self.rtt = 0.875*self.rtt + 0.125*sample_rtt
-                    devrtt = 0.75*self.rtt + 0.25*abs(sample_rtt - self.rtt)
-                    self.rto = self.rtt + 4*devrtt
-                    self.rto = max(1, self.rto)
-                    self.rto = min(8, self.rto)
                     self.threshold = max(1, self.cwnd/2)
                     self.cwnd = 1
-                    print(f"({self.conn_num})     Current RTO: {self.rto}")
+                    print(f"({self.conn_num})     Current RTO: {curr_rto}")
                     print(f"({self.conn_num})     Timeout: ACK {seg.ack_num} SEQ {seg.seq_num}")
                     self._resend(seg)
 
@@ -358,10 +362,10 @@ class Connection:
         tcp_seg.timer = time.time()
         tcp_seg.ack_num = self.ack_num
         with self.inflight_buf_lock:
-            self.inflight_buf.insert(0, (tcp_seg.seq_num, tcp_seg))
+            self.inflight_buf.append((tcp_seg.seq_num, tcp_seg))
 #        tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
         with self.send_buf_lock:
-            self.send_buf.insert(0, (tcp_seg, (self.dst_ip, self.dst_port)))
+            self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
 
     def _send_control(self):
         while self.listening:
@@ -370,13 +374,12 @@ class Connection:
                     self.send_next = False
                 if self.state != "ESTABLISHED":
                     self.cwnd = 1
-                if len(self.inflight_buf) >= int(self.cwnd):
-                    print(f"({self.conn_num})     |Inflight buffer full")
+
                 while len(self.inflight_buf)<int(self.cwnd):
                     self._send(flags=['ACK'], nodata=False)
                     if not self.send_data_buf:
                         break
-                    time.sleep(0.001)
+                print(f"({self.conn_num})     |Inflight full: {len(self.inflight_buf)}")
 
 
     def _send(self, flags=[], nodata=True):
@@ -421,16 +424,16 @@ class Connection:
         with self.inflight_buf_lock:
             self.inflight_buf.append((tcp_seg.seq_num, tcp_seg))
         
-        if random.random() < 10e-6:
+        if random.random() < 10e-3:
             # packet loss
             self.total_drop += 1
             print(f"({self.conn_num})     >>>>>>Packet loss: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num}<<<<<<")
-            return
-        
+            print(f"({self.conn_num})     Curr RTO: {self.rto}")
+        else:
+            with self.send_buf_lock:
+                self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
 #        tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
         
-        with self.send_buf_lock:
-            self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
     
     def start_threads(self):
         self.t = threading.Thread(target=self._recv, args=(1024,))
@@ -451,6 +454,13 @@ class Connection:
                 time.sleep(0.01)
                 self.update_state("LAST_ACK")
                 self._send(flags=['FIN'])
+        count=0
+        while self.state!="CLOSED" and self.listening:
+            time.sleep(1)
+            count+=1
+            if count>5:
+                self.listening = False
+                self.update_state("CLOSED")
                 break
 
     def terminate(self):
@@ -549,32 +559,69 @@ class Connection:
                 self.print_seg(tcp_seg)
                 continue
             
-            # list of flags raised
+            self.measure += 1
+            if self.inflight_buf and self.measure >=10:
+                self.measure = 0
+                with self.inflight_buf_lock:
+                    ack_seg = [x for x in self.inflight_buf if x[0] == tcp_seg.ack_num]
+                if ack_seg:
+                    sample_rtt = time.time() - ack_seg[0][1].timer
+                    self.rtt = 0.875*self.rtt + 0.125*sample_rtt
+                    devrtt = 0.75*self.rtt + 0.25*abs(sample_rtt - self.rtt)
+                    self.rto = self.rtt + 4*devrtt
+                    self.rto = max(1, self.rto)
+
+            
+            if self.ack_num==0 or self.last_received_seq < tcp_seg.seq_num:
+                if self.ack_num == 0 or not self.last_seg or tcp_seg.seq_num == self._get_next_seq(self.last_seg):
+                    with self.recv_buf_lock:
+                        self.recv_buf.append(tcp_seg)
+                    self.last_received_seq = tcp_seg.seq_num
+                    self.last_seg = tcp_seg
+                    self.ack_num = max(self.ack_num, self._get_next_seq(tcp_seg))
+                    print(f"({self.conn_num})     |Received SEQ {tcp_seg.seq_num}")
+                elif tcp_seg.seq_num > self._get_next_seq(self.last_seg):
+                    print(f"({self.conn_num})     |Received out of order SEQ {tcp_seg.seq_num}")
+                    self.out_of_order_buf.append(tcp_seg)
+                    for x in self.out_of_order_buf:
+                        if x.seq_num == self.ack_num:
+                            with self.recv_buf_lock:
+                                self.recv_buf.append(x)
+                                self.recv_buf.sort(key=lambda x: x.seq_num)
+                            self.last_received_seq = self.recv_buf[-1].seq_num
+                            self.last_seg = self.recv_buf[-1]
+                            self.ack_num = max(self.ack_num, self._get_next_seq(self.recv_buf[-1]))
+                    self.out_of_order_buf = [x for x in self.out_of_order_buf if x.seq_num >= self.ack_num]
+                else:
+                    print(f"({self.conn_num})     |Received old SEQ {tcp_seg.seq_num}")
+
+            else:
+                print(f"({self.conn_num})     |Received duplicate SEQ {tcp_seg.seq_num}")
             
 
+            
             if self.last_acked == tcp_seg.ack_num and self.fast_retransmit_function:
                 self.duplicate_ack += 1
                 with self.waiting_for_ack_lock:
-                        self.waiting_for_ack = False
+                    self.waiting_for_ack = False
                 with self.delayed_ack_lock:
                     self.delayed_ack = False
                 print(f"({self.conn_num})     |{self.duplicate_ack} Duplicate ACK {self.duplicate_ack} SEQ {tcp_seg.seq_num}")
-            
-            self.last_acked = tcp_seg.ack_num # my seq  
-            if self.inflight_buf:
-                with self.inflight_buf_lock:
-                    self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked] 
-            if tcp_seg.seq_num == self.ack_num or self.ack_num ==0:
-                self.ack_num = max(self.ack_num, self._get_next_seq(tcp_seg)) # their seq                
+            else:
+                self.duplicate_ack = 0
 
-            if self.duplicate_ack >=3 and self.fast_retransmit_function:
+            self.last_acked = tcp_seg.ack_num # my seq 
+            with self.inflight_buf_lock:
+                self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked]
+
+            if self.duplicate_ack >=3 and self.fast_retransmit_function and not flags['FIN']:
                 with self.waiting_for_ack_lock:
                     self.waiting_for_ack = False
                 with self.delayed_ack_lock:
                     self.delayed_ack = False
                 self.duplicate_ack = 0
                 self.threshold = max(1, self.cwnd/2)
-                self.cwnd = 1
+                self.cwnd = self.threshold
                 print(f"({self.conn_num})     |Expected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}")
                 if self.inflight_buf:
                     with self.inflight_buf_lock:
@@ -582,8 +629,6 @@ class Connection:
                     if re_seg:
                         re_seg[0].ack_num = self.ack_num
                         self._resend(re_seg[0])
-                else:
-                    self._send(flags=['ACK'], nodata=True)
                 continue
 
 
@@ -603,11 +648,6 @@ class Connection:
                     print(f"({self.conn_num})     |(Delayed ACK)")
                     with self.delayed_ack_lock:
                         self.delayed_ack = True
-                    self.last_received_seq = max(tcp_seg.seq_num, self.last_received_seq)
-                    if tcp_seg.seq_num == self.last_received_seq:
-                        if tcp_seg not in self.recv_buf:
-                            with self.recv_buf_lock:
-                                self.recv_buf.append(tcp_seg)
                     with self.waiting_for_ack_lock:                                
                         self.waiting_for_ack = True
                     continue
@@ -637,12 +677,7 @@ class Connection:
                 self.update_state("CLOSED")
 
             
-            if not self.last_received_seq >= tcp_seg.seq_num:
-                with self.recv_buf_lock:
-                    self.recv_buf.append(tcp_seg)
-                    self.last_received_seq = tcp_seg.seq_num
-            else:
-                print(f"({self.conn_num})     |Received duplicate SEQ {tcp_seg.seq_num}")
+
 
             #print(f"({self.conn_num})     buf: {len(self.recv_buf)}")
 

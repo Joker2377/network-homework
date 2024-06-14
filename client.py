@@ -29,8 +29,8 @@ def worker():
             if data == b'END':
                 break
             f.write(data)
+    
     conn.close()
-    client.close()
 
 if __name__ == "__main__":
 
