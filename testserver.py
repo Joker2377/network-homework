@@ -8,8 +8,12 @@ import time
 import dns.resolver
 import re
 import hashlib
+import argparse
 
 threads = []
+
+parser = argparse.ArgumentParser(description="TCP Server")
+parser.add_argument('--port', type=int, help="Port Number", default=12345)
 
 def compute_sha256sum(file_path):
     # Create a sha256 hash object
@@ -137,8 +141,9 @@ def close_thread():
         time.sleep(1)
 
 if __name__ == "__main__":
-    server = TCPSocket(src_ip='127.0.0.1', src_port=12345)
-    server.bind(src_ip='127.0.0.1', src_port=12345)
+    src_port = parser.parse_args().port
+    server = TCPSocket(src_ip='127.0.0.1', src_port=src_port)
+    server.bind(src_ip='127.0.0.1', src_port=src_port)
     
     # create a thread closing empty thread
     t = threading.Thread(target=close_thread)

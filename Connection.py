@@ -253,6 +253,7 @@ class Connection:
         self.cwnd = 1
         self.threshold = 64
         self.mss = 1024
+        self.recv_buf_size = 512
 
         self.rtt = 0.03
         self.rto = 1
@@ -274,8 +275,9 @@ class Connection:
         self.send_next = False
 
         self.delay_ack_function = False
-        self.constant_cwnd = True
+        self.constant_cwnd = False
         self.fast_retransmit_function = True
+        self.design_loss = False
 
         self.last_received_seq = 0
         self.last_seg = None
@@ -285,6 +287,9 @@ class Connection:
         self.total_drop = 0
 
         self.measure = 3
+        self.fast_recovery = False
+
+        
 
 
         self.start_threads()
@@ -342,8 +347,9 @@ class Connection:
                 curr_time = time.time();
                 curr_rto = self.rto
                 with self.inflight_buf_lock:
-                    inflight_buf_copy = self.inflight_buf.copy()
-                late_list = [seg for seq, seg in inflight_buf_copy if curr_time - seg.timer > self.rto]
+                    late_list = [seg for seq, seg in self.inflight_buf if curr_time - seg.timer > self.rto]
+                    # remove duplicate
+                    late_list = list(set(late_list))
                 if late_list:
                     print("LATE LIST: ", *[(curr_time - seg.timer, seg.seq_num) for seg in late_list], sep="\n")
                 for seg in late_list:
@@ -377,7 +383,7 @@ class Connection:
 
                 while len(self.inflight_buf)<int(self.cwnd):
                     self._send(flags=['ACK'], nodata=False)
-                    if not self.send_data_buf:
+                    if not self.send_data_buf or len(self.inflight_buf) >= int(self.cwnd):
                         break
                 print(f"({self.conn_num})     |Inflight full: {len(self.inflight_buf)}")
 
@@ -424,7 +430,14 @@ class Connection:
         with self.inflight_buf_lock:
             self.inflight_buf.append((tcp_seg.seq_num, tcp_seg))
         
-        if random.random() < 10e-3:
+        if self.design_loss and self.seq_num>=8192:
+            self.design_loss = False 
+            self.total_drop += 1
+            print(f"({self.conn_num})     >>>>>>Packet loss: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num}<<<<<<")
+            print(f"({self.conn_num})     Curr RTO: {self.rto}")
+            return
+
+        if self.design_loss and random.random() < 10e-6:
             # packet loss
             self.total_drop += 1
             print(f"({self.conn_num})     >>>>>>Packet loss: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num}<<<<<<")
@@ -455,7 +468,7 @@ class Connection:
                 self.update_state("LAST_ACK")
                 self._send(flags=['FIN'])
         count=0
-        while self.state!="CLOSED" and self.listening:
+        while self.listening:
             time.sleep(1)
             count+=1
             if count>5:
@@ -573,6 +586,8 @@ class Connection:
 
             
             if self.ack_num==0 or self.last_received_seq < tcp_seg.seq_num:
+                if self.len(self.recv_buf) >= self.recv_buf_size:
+                    print(f"({self.conn_num})     |Receive buffer full")
                 if self.ack_num == 0 or not self.last_seg or tcp_seg.seq_num == self._get_next_seq(self.last_seg):
                     with self.recv_buf_lock:
                         self.recv_buf.append(tcp_seg)
@@ -602,6 +617,8 @@ class Connection:
             
             if self.last_acked == tcp_seg.ack_num and self.fast_retransmit_function:
                 self.duplicate_ack += 1
+                if self.fast_recovery:
+                    self.cwnd = self.cwnd + 1
                 with self.waiting_for_ack_lock:
                     self.waiting_for_ack = False
                 with self.delayed_ack_lock:
@@ -609,19 +626,26 @@ class Connection:
                 print(f"({self.conn_num})     |{self.duplicate_ack} Duplicate ACK {self.duplicate_ack} SEQ {tcp_seg.seq_num}")
             else:
                 self.duplicate_ack = 0
+                if self.fast_retransmit_function and self.fast_recovery:
+                    self.cwnd = self.threshold
+                self.fast_recovery = False
+                
 
             self.last_acked = tcp_seg.ack_num # my seq 
             with self.inflight_buf_lock:
                 self.inflight_buf = [(seq, seg) for seq, seg in self.inflight_buf if seq >= self.last_acked]
 
             if self.duplicate_ack >=3 and self.fast_retransmit_function and not flags['FIN']:
+                self.duplicate_ack = 0
                 with self.waiting_for_ack_lock:
                     self.waiting_for_ack = False
                 with self.delayed_ack_lock:
                     self.delayed_ack = False
-                self.duplicate_ack = 0
-                self.threshold = max(1, self.cwnd/2)
-                self.cwnd = self.threshold
+                if not self.fast_recovery:
+                    self.threshold = max(1, self.cwnd/2)
+                    self.cwnd = self.threshold
+                    self.fast_recovery = True
+
                 print(f"({self.conn_num})     |Expected SEQ {self.ack_num} but got SEQ {tcp_seg.seq_num}")
                 if self.inflight_buf:
                     with self.inflight_buf_lock:
@@ -635,9 +659,13 @@ class Connection:
             if self.state == "ESTABLISHED" and not self.constant_cwnd:
                 if self.cwnd < self.threshold:
                     print(f"({self.conn_num})     >>>slow start mode<<<")
-                else:
+                    self.cwnd = self.cwnd + 1
+                elif self.fast_recovery:
+                    print(f"({self.conn_num})     >>>fast recovery mode<<<")
+                else:                
                     print(f"({self.conn_num})     >>>congestion avoidance mode<<<")
-                self.cwnd = self.cwnd + 1 if self.cwnd < self.threshold else self.cwnd + 1/self.cwnd
+                    self.cwnd = self.cwnd + 1/self.cwnd
+                
                 print(f"({self.conn_num})     |(cwnd: {self.cwnd*self.mss} MSS: {self.mss} threshold: {self.threshold})")
             else:
                 self.cwnd = 1
@@ -683,8 +711,10 @@ class Connection:
 
     def _get_recv_buf(self):
         # pop the front
-        while not self.recv_buf:
+        while not self.recv_buf and self.listening:
             time.sleep(0.01)
+        if not self.listening:
+            return None
             
         with self.recv_buf_lock:
             #print(f"({self.conn_num})     buf: {len(self.recv_buf)}")

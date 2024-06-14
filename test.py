@@ -110,9 +110,17 @@ def task3(conn, filename):
 def worker():
     print("****NEW CLIENT CREATED****")
     src_port = random.randint(1000, 50000)
-    client = TCPSocket(src_ip='127.0.0.2', src_port=src_port)
-    client.bind(src_ip='127.0.0.2', src_port=src_port)
-    conn = client.connect(dst_ip='127.0.0.1', dst_port=12345)
+    client = TCPSocket(src_ip='127.0.0.1', src_port=src_port)
+    client.bind(src_ip='127.0.0.1', src_port=src_port)
+    if args.ip and args.port:
+        dst_ip = args.ip
+        dst_port = args.port
+    else:
+        dst_ip = '127.0.0.1'
+        dst_port = 12345
+    print(f"Server IP: {dst_ip}")
+    print(f"Server Port: {dst_port}")
+    conn = client.connect(dst_ip, dst_port)
     conn.constant_cwnd = True
     conn.fast_retransmit_function = False
     conn.handshake()
