@@ -367,8 +367,6 @@ class Connection:
         print(f"({self.conn_num})     Resending: ACK {tcp_seg.ack_num} SEQ {tcp_seg.seq_num}: {len(tcp_seg.data)} bytes")
         tcp_seg.timer = time.time()
         tcp_seg.ack_num = self.ack_num
-        with self.inflight_buf_lock:
-            self.inflight_buf.append((tcp_seg.seq_num, tcp_seg))
 #        tcp_seg = tcp_seg.pack(socket.inet_aton(self.src_ip), socket.inet_aton(self.dst_ip))
         with self.send_buf_lock:
             self.send_buf.append((tcp_seg, (self.dst_ip, self.dst_port)))
@@ -385,6 +383,7 @@ class Connection:
                     self._send(flags=['ACK'], nodata=False)
                     if not self.send_data_buf or len(self.inflight_buf) >= int(self.cwnd):
                         break
+                    time.sleep(0.0001)
                 print(f"({self.conn_num})     |Inflight full: {len(self.inflight_buf)}")
 
 
@@ -427,8 +426,6 @@ class Connection:
         with self.seq_num_lock:
             self.seq_num = self._get_next_seq(tcp_seg)
         tcp_seg.timer = time.time()
-        with self.inflight_buf_lock:
-            self.inflight_buf.append((tcp_seg.seq_num, tcp_seg))
         
         if self.design_loss and self.seq_num>=8192:
             self.design_loss = False 
